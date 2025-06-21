@@ -96,10 +96,12 @@
       const targetsInput = document.getElementById('difficulty').value;
       const targets = [targetsInput.toLowerCase()];
       const output = document.getElementById('output');
+      output.innerHTML = `Selected File: <strong>${uploadedFileName}</strong><br>`;
       const verifyAnimation = document.getElementById('verifyAnimation');
       const miningAnimation = document.getElementById('animation');
 
       let nonce = 0;
+      miningAnimation.textContent = 'Starting mining process...';
       let hash = '';
       let animationFrames = ['|', '/', '-', '\\'];
       let frameIndex = 0;
