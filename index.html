@@ -1,10 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Nonce Race - Proof of Work Demo</title>
   <script src="https://cdn.jsdelivr.net/npm/js-sha256@0.9.0/build/sha256.min.js"></script>
+  <script>
+    const sha256_lib = sha256; // capture lib function to avoid name conflict
+  </script>
   <style>
     body {
       font-family: 'Courier New', monospace;
@@ -27,13 +30,13 @@
       background-color: #003300;
       cursor: pointer;
     }
-    #output {
+    #output, #verifyOutput {
       margin-top: 20px;
       font-family: monospace;
       white-space: pre-wrap;
       font-size: 16px;
     }
-    #animation {
+    #animation, #verifyAnimation {
       font-family: monospace;
       margin-top: 10px;
       font-size: 16px;
@@ -73,8 +76,8 @@
   <input type="number" id="verifyNonce" placeholder="Nonce to verify"><br>
   <p style="color: red;"><strong>Step 3:</strong> Click the button to verify</p>
   <button onclick="verifyNonce()" style="color: red; border-color: red;">Verify</button>
-  <div id="verifyOutput" style="margin-top: 15px; font-size: 18px;"></div>
-  <div id="verifyAnimation" style="font-family: monospace; margin-top: 10px; font-size: 16px; height: 20px;"></div>
+  <div id="verifyAnimation"></div>
+  <div id="verifyOutput"></div>
 
   <script>
     let uploadedFileName = 'HardDrive_Image_1.img';
@@ -87,7 +90,7 @@
 
     function sha256(text) {
       try {
-        return sha256_lib(text); // using js-sha256 library
+        return sha256_lib(text); // use library safely
       } catch (err) {
         document.getElementById('output').innerHTML = `<span style="color: red;">SHA256 ERROR: ${err.message}</span>`;
         console.error("SHA256 error:", err);
@@ -101,11 +104,10 @@
       const targets = [targetsInput.toLowerCase()];
       const output = document.getElementById('output');
       output.innerHTML = `Selected File: <strong>${uploadedFileName}</strong><br>`;
-      const verifyAnimation = document.getElementById('verifyAnimation');
       const miningAnimation = document.getElementById('animation');
+      miningAnimation.textContent = 'Starting mining process...';
 
       let nonce = 0;
-      miningAnimation.textContent = 'Starting mining process...';
       let hash = '';
       let animationFrames = ['|', '/', '-', '\\'];
       let frameIndex = 0;
@@ -129,12 +131,12 @@
       const endTime = performance.now();
       miningAnimation.textContent = '';
       output.innerHTML += `<div style='font-size: 24px; font-weight: bold; color: #00ff00;'>[::] NONCE DISCOVERED [::]</div><br>
-<div style='font-size: 32px; color: #00ff00;'>Nonce: ${nonce}</div>
-Message: ${message}<br>
-Hash: ${hash}<br>
-Attempts: ${nonce}<br>
-Time: ${(endTime - startTime).toFixed(2)} ms<br>
-Matched Prefix: ${targets.find(prefix => hash.startsWith(prefix))}`;
+      <div style='font-size: 32px; color: #00ff00;'>Nonce: ${nonce}</div>
+      Message: ${message}<br>
+      Hash: ${hash}<br>
+      Attempts: ${nonce}<br>
+      Time: ${(endTime - startTime).toFixed(2)} ms<br>
+      Matched Prefix: ${targets.find(prefix => hash.startsWith(prefix))}`;
     }
 
     async function verifyNonce() {
@@ -175,9 +177,7 @@ Matched Prefix: ${targets.find(prefix => hash.startsWith(prefix))}`;
       }
     }
 
-    window.onload = () => {
-      setUploadedFile();
-    };
+    window.onload = setUploadedFile;
   </script>
 </body>
 </html>
