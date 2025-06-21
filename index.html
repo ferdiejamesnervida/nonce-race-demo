@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Nonce Race - Proof of Work Demo</title>
+  <script src="https://cdn.jsdelivr.net/npm/js-sha256@0.9.0/build/sha256.min.js"></script>
   <style>
     body {
       font-family: 'Courier New', monospace;
@@ -84,11 +85,14 @@
       document.getElementById('output').innerHTML = `Selected File: <strong>${uploadedFileName}</strong><br>`;
     }
 
-    async function sha256(text) {
-      const encoder = new TextEncoder();
-      const data = encoder.encode(text);
-      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-      return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+    function sha256(text) {
+      try {
+        return sha256_lib(text); // using js-sha256 library
+      } catch (err) {
+        document.getElementById('output').innerHTML = `<span style="color: red;">SHA256 ERROR: ${err.message}</span>`;
+        console.error("SHA256 error:", err);
+        return '';
+      }
     }
 
     async function startMining() {
@@ -107,10 +111,10 @@
       let frameIndex = 0;
 
       const startTime = performance.now();
-      const minDuration = 8000; // 8 seconds in ms
+      const minDuration = 8000;
 
       while (true) {
-        hash = await sha256(message + nonce);
+        hash = sha256(message + nonce);
         const currentTime = performance.now();
         if (targets.some(prefix => hash.startsWith(prefix)) && (currentTime - startTime >= minDuration)) {
           break;
@@ -142,7 +146,7 @@ Matched Prefix: ${targets.find(prefix => hash.startsWith(prefix))}`;
 
       let animationFrames = ['|', '/', '-', '\\'];
       let frameIndex = 0;
-      const minDuration = 5000; // 5 seconds in ms
+      const minDuration = 5000;
       const startTime = performance.now();
 
       while (true) {
@@ -158,12 +162,11 @@ Matched Prefix: ${targets.find(prefix => hash.startsWith(prefix))}`;
       }
 
       verifyAnimation.textContent = '';
-
-      const hash = await sha256(message + nonce);
+      const hash = sha256(message + nonce);
 
       if (hash.startsWith(target)) {
-      verifyOutput.style.color = 'red';
-      verifyOutput.textContent = `✅ Verified: Hash = ${hash}
+        verifyOutput.style.color = 'red';
+        verifyOutput.textContent = `✅ Verified: Hash = ${hash}
 
 🎉 The miner who discovered this nonce is rewarded with 10 bitcoins.`;
       } else {
@@ -171,12 +174,10 @@ Matched Prefix: ${targets.find(prefix => hash.startsWith(prefix))}`;
         verifyOutput.textContent = `❌ WRONG NONCE - DATA HAS BEEN TAMPERED!\nHash = ${hash}`;
       }
     }
-  
 
-    // Set uploadedFileName and display it when the page loads
     window.onload = () => {
       setUploadedFile();
     };
-</script>
+  </script>
 </body>
 </html>
