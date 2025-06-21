@@ -156,33 +156,41 @@
       const targets = [targetsInput.toLowerCase()];
 
       let nonce = 0;
-      let hash = '';
+      let foundNonce = null;
+      let foundHash = null;
+
       const startTime = performance.now();
       const minDuration = 8000;
 
+      // Start nonce search in background
       while (true) {
-        hash = sha256(message + nonce);
-        const currentTime = performance.now();
-        if (targets.some(prefix => hash.startsWith(prefix)) && (currentTime - startTime >= minDuration)) {
+        const hash = sha256(message + nonce);
+        if (targets.some(prefix => hash.startsWith(prefix))) {
+          foundNonce = nonce;
+          foundHash = hash;
           break;
         }
         nonce++;
         if (nonce % 1000 === 0) await new Promise(resolve => setTimeout(resolve, 1));
       }
 
-      const endTime = performance.now();
+      const elapsed = performance.now() - startTime;
+      if (elapsed < minDuration) {
+        await new Promise(resolve => setTimeout(resolve, minDuration - elapsed));
+      }
+
       stopCalculatingAnimation();
       document.getElementById("fullScreenMessage").classList.add("hidden");
       document.getElementById("mainContent").classList.remove("hidden");
 
       const output = document.getElementById('output');
       output.innerHTML = `<div style='font-size: 24px; font-weight: bold; color: #00ff00;'>[::] NONCE DISCOVERED [::]</div><br>
-<div style='font-size: 32px; color: #00ff00;'>Nonce: ${nonce}</div>
+<div style='font-size: 32px; color: #00ff00;'>Nonce: ${foundNonce}</div>
 Message: ${message}<br>
-Hash: ${hash}<br>
-Attempts: ${nonce}<br>
-Time: ${(endTime - startTime).toFixed(2)} ms<br>
-Matched Prefix: ${targets.find(prefix => hash.startsWith(prefix))}`;
+Hash: ${foundHash}<br>
+Attempts: ${foundNonce}<br>
+Time: ${(performance.now() - startTime).toFixed(2)} ms<br>
+Matched Prefix: ${targets.find(prefix => foundHash.startsWith(prefix))}`;
     }
 
     async function verifyNonce() {
