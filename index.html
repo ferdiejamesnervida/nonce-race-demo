@@ -136,7 +136,7 @@ Matched Prefix: ${targets.find(prefix => hash.startsWith(prefix))}`;
       const nonce = document.getElementById('verifyNonce').value;
       const target = document.getElementById('difficulty').value.toLowerCase();
       const verifyOutput = document.getElementById('verifyOutput');
-      const animation = document.getElementById('animation');
+      const verifyAnimation = document.getElementById('verifyAnimation');
 
       let animationFrames = ['|', '/', '-', '\\'];
       let frameIndex = 0;
@@ -145,7 +145,7 @@ Matched Prefix: ${targets.find(prefix => hash.startsWith(prefix))}`;
 
       while (true) {
         const currentTime = performance.now();
-        animation.textContent = `Verifying nonce ${animationFrames[frameIndex % animationFrames.length]} Please wait...`;
+        verifyAnimation.textContent = `Verifying nonce ${animationFrames[frameIndex % animationFrames.length]} Please wait...`;
         frameIndex++;
 
         if (currentTime - startTime >= minDuration) {
@@ -155,7 +155,7 @@ Matched Prefix: ${targets.find(prefix => hash.startsWith(prefix))}`;
         await new Promise(resolve => setTimeout(resolve, 100));
       }
 
-      animation.textContent = '';
+      verifyAnimation.textContent = '';
 
       const hash = await sha256(message + nonce);
 
@@ -169,6 +169,12 @@ Matched Prefix: ${targets.find(prefix => hash.startsWith(prefix))}`;
         verifyOutput.textContent = `❌ WRONG NONCE - DATA HAS BEEN TAMPERED!\nHash = ${hash}`;
       }
     }
-  </script>
+  
+
+    // Set uploadedFileName and display it when the page loads
+    window.onload = () => {
+      setUploadedFile();
+    };
+</script>
 </body>
 </html>
