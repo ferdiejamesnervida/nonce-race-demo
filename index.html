@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Nonce Race - Proof of Work Demo</title>
+  <style>
+    body {
+      font-family: 'Courier New', monospace;
+      text-align: center;
+      padding: 40px;
+      background-color: black;
+      color: #00ff00;
+    }
+    input, select, button {
+      padding: 10px;
+      margin: 5px;
+      width: 300px;
+      font-size: 16px;
+      background-color: black;
+      color: #00ff00;
+      border: 1px solid #00ff00;
+    }
+    button:hover {
+      background-color: #003300;
+      cursor: pointer;
+    }
+    #output {
+      margin-top: 20px;
+      font-family: monospace;
+      white-space: pre-wrap;
+      font-size: 16px;
+    }
+    #animation {
+      font-family: monospace;
+      margin-top: 10px;
+      font-size: 16px;
+      height: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Nonce Race - Proof of Work Demo</h1>
+  <p>Find a nonce that makes the SHA-256 hash of (message + nonce) start with one of the target prefixes.</p>
+
+  <label for="uploadedFile">Select a Hard Drive Image:</label><br>
+  <select id="uploadedFile">
+    <option value="HardDrive_Image_1.img">Hard Drive Image 1</option>
+    <option value="HardDrive_Image_2.img">Hard Drive Image 2</option>
+    <option value="HardDrive_Image_3.img">Hard Drive Image 3</option>
+  </select><br>
+  <label for="difficulty">What should the first 4 characters of the hash look like?</label><br>
+  <select id="difficulty">
+    <option value="0000">0000</option>
+    <option value="000a">000a</option>
+    <option value="000b">000b</option>
+  </select><br>
+  <button onclick="setUploadedFile(); startMining()">Start Mining</button>
+
+  <div id="animation"></div>
+  <div id="output"></div>
+
+  <h2 style="color: red;">Verify Nonce</h2>
+  <p style="color: red;"><strong>Step 1:</strong> Select a hard drive image (same as what was used during mining)</p>
+  <select id="verifyMessage">
+    <option value="HardDrive_Image_1.img">Hard Drive Image 1</option>
+    <option value="HardDrive_Image_2.img">Hard Drive Image 2</option>
+    <option value="HardDrive_Image_3.img">Hard Drive Image 3</option>
+  </select><br>
+  <p style="color: red;"><strong>Step 2:</strong> Enter the nonce you want to verify</p>
+  <input type="number" id="verifyNonce" placeholder="Nonce to verify"><br>
+  <p style="color: red;"><strong>Step 3:</strong> Click the button to verify</p>
+  <button onclick="verifyNonce()" style="color: red; border-color: red;">Verify</button>
+  <div id="verifyOutput" style="margin-top: 15px; font-size: 18px;"></div>
+  <div id="verifyAnimation" style="font-family: monospace; margin-top: 10px; font-size: 16px; height: 20px;"></div>
+
+  <script>
+    let uploadedFileName = 'HardDrive_Image_1.img';
+
+    function setUploadedFile() {
+      const selected = document.getElementById('uploadedFile').value;
+      uploadedFileName = selected;
+      document.getElementById('output').innerHTML = `Selected File: <strong>${uploadedFileName}</strong><br>`;
+    }
+
+    async function sha256(text) {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(text);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    async function startMining() {
+      const message = uploadedFileName;
+      const targetsInput = document.getElementById('difficulty').value;
+      const targets = [targetsInput.toLowerCase()];
+      const output = document.getElementById('output');
+      const verifyAnimation = document.getElementById('verifyAnimation');
+      const miningAnimation = document.getElementById('animation');
+
+      let nonce = 0;
+      let hash = '';
+      let animationFrames = ['|', '/', '-', '\\'];
+      let frameIndex = 0;
+
+      const startTime = performance.now();
+      const minDuration = 8000; // 8 seconds in ms
+
+      while (true) {
+        hash = await sha256(message + nonce);
+        const currentTime = performance.now();
+        if (targets.some(prefix => hash.startsWith(prefix)) && (currentTime - startTime >= minDuration)) {
+          break;
+        }
+        nonce++;
+        if (nonce % 1000 === 0) {
+          miningAnimation.textContent = `Computer now spending computational effort to find nonce ${animationFrames[frameIndex % animationFrames.length]} Attempt: ${nonce}`;
+          frameIndex++;
+        }
+      }
+
+      const endTime = performance.now();
+      miningAnimation.textContent = '';
+      output.innerHTML += `<div style='font-size: 24px; font-weight: bold; color: #00ff00;'>[::] NONCE DISCOVERED [::]</div><br>
+<div style='font-size: 32px; color: #00ff00;'>Nonce: ${nonce}</div>
+Message: ${message}<br>
+Hash: ${hash}<br>
+Attempts: ${nonce}<br>
+Time: ${(endTime - startTime).toFixed(2)} ms<br>
+Matched Prefix: ${targets.find(prefix => hash.startsWith(prefix))}`;
+    }
+
+    async function verifyNonce() {
+      const message = document.getElementById('verifyMessage').value;
+      const nonce = document.getElementById('verifyNonce').value;
+      const target = document.getElementById('difficulty').value.toLowerCase();
+      const verifyOutput = document.getElementById('verifyOutput');
+      const animation = document.getElementById('animation');
+
+      let animationFrames = ['|', '/', '-', '\\'];
+      let frameIndex = 0;
+      const minDuration = 5000; // 5 seconds in ms
+      const startTime = performance.now();
+
+      while (true) {
+        const currentTime = performance.now();
+        animation.textContent = `Verifying nonce ${animationFrames[frameIndex % animationFrames.length]} Please wait...`;
+        frameIndex++;
+
+        if (currentTime - startTime >= minDuration) {
+          break;
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
+      animation.textContent = '';
+
+      const hash = await sha256(message + nonce);
+
+      if (hash.startsWith(target)) {
+      verifyOutput.style.color = 'red';
+      verifyOutput.textContent = `✅ Verified: Hash = ${hash}
+
+🎉 The miner who discovered this nonce is rewarded with 10 bitcoins.`;
+      } else {
+        verifyOutput.style.color = 'red';
+        verifyOutput.textContent = `❌ WRONG NONCE - DATA HAS BEEN TAMPERED!\nHash = ${hash}`;
+      }
+    }
+  </script>
+</body>
+</html>
