@@ -18,14 +18,15 @@
     h1, h2 {
       color: #00ff00;
     }
-    .input-box, .output-box {
+    .input-box, .output-box, .highlight-box, footer, p {
       width: 100%;
-      max-width: 700px;
+      max-width: 90vw;
       background: #111;
       border: 1px solid #00ff00;
       padding: 10px;
       margin: 10px 0;
       color: #00ff00;
+      box-sizing: border-box;
     }
     .output-box {
       min-height: 40px;
@@ -35,12 +36,6 @@
     .highlight-box {
       font-weight: bold;
       font-size: 1.2em;
-      color: #00ff00;
-      background: #111;
-      border: 1px solid #00ff00;
-      padding: 10px;
-      margin: 10px 0;
-      max-width: 700px;
       word-wrap: break-word;
     }
     button {
@@ -57,6 +52,7 @@
       color: #00ff00;
       border: 1px solid #00ff00;
       padding: 5px;
+      margin-top: 10px;
     }
     #powSection {
       margin-top: 150vh;
@@ -67,16 +63,14 @@
       opacity: 1;
     }
     footer {
-      margin-top: 30px;
       font-size: 0.9em;
       color: #00cc00;
-      max-width: 700px;
     }
   </style>
 </head>
 <body>
   <h1>🔐 SHA-256 Hashing Demo</h1>
-  <p style="max-width: 700px;">Welcome to the SHA-256 hashing demo. SHA-256 is a cryptographic hash function that takes any input and produces a fixed 64-character hexadecimal output. No matter the length of your input, the result is always a 256-bit hash (64 hex characters).</p>
+  <p>Welcome to the SHA-256 hashing demo. SHA-256 is a cryptographic hash function that takes any input and produces a fixed 64-character hexadecimal output. No matter the length of your input, the result is always a 256-bit hash (64 hex characters).</p>
 
   <textarea id="inputData" class="input-box" rows="4" placeholder="Type your data here..."></textarea>
   <button onclick="processHash()">Process using SHA-256 Algorithm</button>
@@ -84,15 +78,15 @@
 
   <div id="powSection">
     <h2>⚙️ Proof of Work Demo</h2>
-    <p style="max-width: 700px;">Enter input data and select a difficulty. The goal is to find a nonce such that the resulting SHA-256 hash starts with the chosen prefix.</p>
+    <p>Enter input data and select a difficulty. The goal is to find a nonce such that the resulting SHA-256 hash starts with the chosen prefix.</p>
     <textarea id="powInput" class="input-box" rows="3" placeholder="Enter data for Proof of Work..."></textarea>
-    <label for="difficulty">Select difficulty (required prefix of hash):</label>
+    <label for="difficulty">Select difficulty (required prefix of hash):</label><br>
     <select id="difficulty">
       <option value="0000">0000</option>
       <option value="000a">000a</option>
       <option value="000b">000b</option>
     </select>
-    <br><br>
+    <br>
     <button onclick="startProofOfWork()">Calculate the code</button>
     <p id="powStatus"></p>
     <div class="highlight-box" id="powNonce"></div>
