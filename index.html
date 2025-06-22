@@ -15,7 +15,7 @@
       align-items: center;
       text-align: center;
     }
-    h1 {
+    h1, h2 {
       color: #00ff00;
     }
     .input-box, .output-box {
@@ -32,6 +32,17 @@
       white-space: nowrap;
       overflow-x: auto;
     }
+    .highlight-box {
+      font-weight: bold;
+      font-size: 1.2em;
+      color: #00ff00;
+      background: #111;
+      border: 1px solid #00ff00;
+      padding: 10px;
+      margin: 10px 0;
+      max-width: 700px;
+      word-wrap: break-word;
+    }
     button {
       background-color: #00ff00;
       color: #0f0f0f;
@@ -40,6 +51,20 @@
       cursor: pointer;
       font-weight: bold;
       margin-top: 10px;
+    }
+    select {
+      background-color: #0f0f0f;
+      color: #00ff00;
+      border: 1px solid #00ff00;
+      padding: 5px;
+    }
+    #powSection {
+      margin-top: 150vh;
+      opacity: 0.2;
+      transition: opacity 0.5s ease-in-out;
+    }
+    #powSection.visible {
+      opacity: 1;
     }
     footer {
       margin-top: 30px;
@@ -56,6 +81,23 @@
   <textarea id="inputData" class="input-box" rows="4" placeholder="Type your data here..."></textarea>
   <button onclick="processHash()">Process using SHA-256 Algorithm</button>
   <p class="output-box" id="outputHash"></p>
+
+  <div id="powSection">
+    <h2>⚙️ Proof of Work Demo</h2>
+    <p style="max-width: 700px;">Enter input data and select a difficulty. The goal is to find a nonce such that the resulting SHA-256 hash starts with the chosen prefix.</p>
+    <textarea id="powInput" class="input-box" rows="3" placeholder="Enter data for Proof of Work..."></textarea>
+    <label for="difficulty">Select difficulty (required prefix of hash):</label>
+    <select id="difficulty">
+      <option value="0000">0000</option>
+      <option value="000a">000a</option>
+      <option value="000b">000b</option>
+    </select>
+    <br><br>
+    <button onclick="startProofOfWork()">Calculate the code</button>
+    <p id="powStatus"></p>
+    <div class="highlight-box" id="powNonce"></div>
+    <p class="output-box" id="powHash"></p>
+  </div>
 
   <footer>
     This mini site was created by Ferdie James Nervida for demo purposes as part of learning and teaching about blockchain systems and cryptographic fundamentals.
@@ -74,6 +116,51 @@
 
       output.textContent = hashHex;
     }
+
+    async function startProofOfWork() {
+      const input = document.getElementById("powInput").value;
+      const difficulty = document.getElementById("difficulty").value;
+      const status = document.getElementById("powStatus");
+      const nonceBox = document.getElementById("powNonce");
+      const hashBox = document.getElementById("powHash");
+
+      nonceBox.textContent = "";
+      hashBox.textContent = "";
+      status.textContent = "Searching for code...";
+
+      const encoder = new TextEncoder();
+      let nonce = 0;
+      let hash = "";
+
+      const startTime = Date.now();
+      while (true) {
+        const message = input + nonce;
+        const data = encoder.encode(message);
+        const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        hash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+        if (hash.startsWith(difficulty)) {
+          break;
+        }
+        nonce++;
+      }
+
+      const duration = Math.max(5000 - (Date.now() - startTime), 0);
+      setTimeout(() => {
+        status.textContent = "CODE FOUND:";
+        nonceBox.textContent = `Nonce: ${nonce}`;
+        hashBox.textContent = hash;
+      }, duration);
+    }
+
+    window.addEventListener('scroll', () => {
+      const powSection = document.getElementById('powSection');
+      const rect = powSection.getBoundingClientRect();
+      if (rect.top < window.innerHeight) {
+        powSection.classList.add('visible');
+      }
+    });
   </script>
 </body>
 </html>
