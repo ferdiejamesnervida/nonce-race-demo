@@ -1,233 +1,79 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Nonce Race - Proof of Work Demo</title>
-  <script src="https://cdn.jsdelivr.net/npm/js-sha256@0.9.0/build/sha256.min.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SHA-256 Demo</title>
   <style>
     body {
-      font-family: 'Courier New', monospace;
-      text-align: center;
-      padding: 40px;
-      background-color: black;
+      background-color: #0f0f0f;
       color: #00ff00;
-    }
-    input, select, button {
-      padding: 10px;
-      margin: 5px;
-      width: 90%;
-      max-width: 300px;
-      font-size: 16px;
-      background-color: black;
-      color: #00ff00;
-      border: 1px solid #00ff00;
-    }
-    button:hover {
-      background-color: #003300;
-      cursor: pointer;
-    }
-    #output, #verifyOutput {
-      margin-top: 20px;
-      font-family: monospace;
-      white-space: pre-wrap;
-      font-size: 16px;
-    }
-    #animation, #verifyAnimation {
-      font-family: monospace;
-      margin-top: 10px;
-      font-size: 16px;
-      height: 20px;
-    }
-    .hidden {
-      display: none;
-    }
-    #fullScreenMessage, #verifyScreenMessage {
-      font-size: 32px;
-      color: #00ff00;
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: black;
+      font-family: 'Courier New', Courier, monospace;
+      padding: 20px;
       display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
       flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    h1 {
+      color: #00ff00;
+    }
+    .input-box, .output-box {
+      width: 100%;
+      max-width: 700px;
+      background: #111;
+      border: 1px solid #00ff00;
+      padding: 10px;
+      margin: 10px 0;
+      color: #00ff00;
+    }
+    .output-box {
+      min-height: 40px;
+      white-space: nowrap;
+      overflow-x: auto;
+    }
+    button {
+      background-color: #00ff00;
+      color: #0f0f0f;
+      padding: 10px 20px;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+    footer {
+      margin-top: 30px;
+      font-size: 0.9em;
+      color: #00cc00;
+      max-width: 700px;
     }
   </style>
 </head>
 <body>
-  <div id="mainContent">
-    <h1>Nonce Race - Proof of Work Demo</h1>
-    <p>Find a nonce that makes the SHA-256 hash of (message + nonce) start with one of the target prefixes.</p>
+  <h1>🔐 SHA-256 Hashing Demo</h1>
+  <p style="max-width: 700px;">Welcome to the SHA-256 hashing demo. SHA-256 is a cryptographic hash function that takes any input and produces a fixed 64-character hexadecimal output. No matter the length of your input, the result is always a 256-bit hash (64 hex characters).</p>
 
-    <label for="uploadedFile">Select a Hard Drive Image:</label><br>
-    <select id="uploadedFile">
-      <option value="HardDrive_Image_1.img">Hard Drive Image 1</option>
-      <option value="HardDrive_Image_2.img">Hard Drive Image 2</option>
-      <option value="HardDrive_Image_3.img">Hard Drive Image 3</option>
-    </select><br>
-    <label for="difficulty">What should the first 4 characters of the hash look like?</label><br>
-    <select id="difficulty">
-      <option value="0000">0000</option>
-      <option value="000a">000a</option>
-      <option value="000b">000b</option>
-    </select><br>
-    <button onclick="setUploadedFile(); startMining()">Start Mining</button>
+  <textarea id="inputData" class="input-box" rows="4" placeholder="Type your data here..."></textarea>
+  <button onclick="processHash()">Process using SHA-256 Algorithm</button>
+  <p class="output-box" id="outputHash"></p>
 
-    <div id="animation"></div>
-    <div id="output"></div>
-
-    <h2 style="color: red;">Verify Nonce</h2>
-    <p style="color: red;"><strong>Step 1:</strong> Select a hard drive image (same as what was used during mining)</p>
-    <select id="verifyMessage">
-      <option value="HardDrive_Image_1.img">Hard Drive Image 1</option>
-      <option value="HardDrive_Image_2.img">Hard Drive Image 2</option>
-      <option value="HardDrive_Image_3.img">Hard Drive Image 3</option>
-    </select><br>
-    <p style="color: red;"><strong>Step 2:</strong> Enter the nonce you want to verify</p>
-    <input type="number" id="verifyNonce" placeholder="Nonce to verify"><br>
-    <p style="color: red;"><strong>Step 3:</strong> Click the button to verify</p>
-    <button onclick="verifyNonce()" style="color: red; border-color: red;">Verify</button>
-    <div id="verifyAnimation"></div>
-    <div id="verifyOutput"></div>
-  </div>
-
-  <div id="fullScreenMessage" class="hidden">
-    <p id="calculatingText">CALCULATING</p>
-  </div>
-
-  <div id="verifyScreenMessage" class="hidden">
-    <p id="verifyingText">VERIFYING</p>
-  </div>
+  <footer>
+    This mini site was created by Ferdie James Nervida for demo purposes as part of learning and teaching about blockchain systems and cryptographic fundamentals.
+  </footer>
 
   <script>
-    let uploadedFileName = 'HardDrive_Image_1.img';
-    let calcInterval, verifyInterval;
+    async function processHash() {
+      const input = document.getElementById("inputData").value;
+      const output = document.getElementById("outputHash");
 
-    function setUploadedFile() {
-      const selected = document.getElementById('uploadedFile').value;
-      uploadedFileName = selected;
-      document.getElementById('output').innerHTML = `Selected File: <strong>${uploadedFileName}</strong><br>`;
+      const encoder = new TextEncoder();
+      const data = encoder.encode(input);
+      const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+      output.textContent = hashHex;
     }
-
-    function sha256(text) {
-      return window.sha256(text);
-    }
-
-    function startCalculatingAnimation() {
-      const textElem = document.getElementById('calculatingText');
-      let dots = 0;
-      calcInterval = setInterval(() => {
-        dots = (dots + 1) % 4;
-        textElem.textContent = 'CALCULATING' + '.'.repeat(dots);
-      }, 500);
-    }
-
-    function stopCalculatingAnimation() {
-      clearInterval(calcInterval);
-      document.getElementById('calculatingText').textContent = '';
-    }
-
-    function startVerifyingAnimation() {
-      const textElem = document.getElementById('verifyingText');
-      let dots = 0;
-      verifyInterval = setInterval(() => {
-        dots = (dots + 1) % 4;
-        textElem.textContent = 'VERIFYING' + '.'.repeat(dots);
-      }, 500);
-    }
-
-    function stopVerifyingAnimation() {
-      clearInterval(verifyInterval);
-      document.getElementById('verifyingText').textContent = '';
-    }
-
-    async function startMining() {
-      document.getElementById("mainContent").classList.add("hidden");
-      document.getElementById("fullScreenMessage").classList.remove("hidden");
-      startCalculatingAnimation();
-
-      const message = uploadedFileName;
-      const targetsInput = document.getElementById('difficulty').value;
-      const targets = [targetsInput.toLowerCase()];
-
-      let nonce = 0;
-      let foundNonce = null;
-      let foundHash = null;
-
-      const startTime = performance.now();
-      const minDuration = 8000;
-
-      // Start nonce search in background
-      while (true) {
-        const hash = sha256(message + nonce);
-        if (targets.some(prefix => hash.startsWith(prefix))) {
-          foundNonce = nonce;
-          foundHash = hash;
-          break;
-        }
-        nonce++;
-        if (nonce % 1000 === 0) await new Promise(resolve => setTimeout(resolve, 1));
-      }
-
-      const elapsed = performance.now() - startTime;
-      if (elapsed < minDuration) {
-        await new Promise(resolve => setTimeout(resolve, minDuration - elapsed));
-      }
-
-      stopCalculatingAnimation();
-      document.getElementById("fullScreenMessage").classList.add("hidden");
-      document.getElementById("mainContent").classList.remove("hidden");
-
-      const output = document.getElementById('output');
-      output.innerHTML = `<div style='font-size: 24px; font-weight: bold; color: #00ff00;'>[::] NONCE DISCOVERED [::]</div><br>
-<div style='font-size: 32px; color: #00ff00;'>Nonce: ${foundNonce}</div>
-Message: ${message}<br>
-Hash: ${foundHash}<br>
-Attempts: ${foundNonce}<br>
-Time: ${(performance.now() - startTime).toFixed(2)} ms<br>
-Matched Prefix: ${targets.find(prefix => foundHash.startsWith(prefix))}`;
-    }
-
-    async function verifyNonce() {
-      document.getElementById("mainContent").classList.add("hidden");
-      document.getElementById("verifyScreenMessage").classList.remove("hidden");
-      startVerifyingAnimation();
-
-      const message = document.getElementById('verifyMessage').value;
-      const nonce = document.getElementById('verifyNonce').value;
-      const target = document.getElementById('difficulty').value.toLowerCase();
-      const verifyOutput = document.getElementById('verifyOutput');
-
-      const minDuration = 5000;
-      const startTime = performance.now();
-
-      while (performance.now() - startTime < minDuration) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
-
-      stopVerifyingAnimation();
-      document.getElementById("verifyScreenMessage").classList.add("hidden");
-      document.getElementById("mainContent").classList.remove("hidden");
-
-      const hash = sha256(message + nonce);
-
-      if (hash.startsWith(target)) {
-        verifyOutput.style.color = 'red';
-        verifyOutput.textContent = `✅ Verified: Hash = ${hash}\n\n🎉 The miner who discovered this nonce is rewarded with 10 bitcoins.`;
-      } else {
-        verifyOutput.style.color = 'red';
-        verifyOutput.textContent = `❌ WRONG NONCE - DATA HAS BEEN TAMPERED!\nHash = ${hash}`;
-      }
-    }
-
-    window.onload = () => {
-      setUploadedFile();
-    };
   </script>
 </body>
 </html>
